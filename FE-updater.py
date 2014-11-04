@@ -7,6 +7,8 @@
 # that of the build it downloaded last and after that it removes the
 # old core, modules and libs and extracts the new ones.
 
+versionfile = "FEVersion.txt"
+
 import json
 import shutil
 import zipfile
@@ -14,24 +16,24 @@ import urllib
 import re
 import os
 
-prevtime = 0
-prevbuild = 0
-
-
 def parsing():
     global prevtime
-    cb_data = {"timestamp": prevtime, "buildnr": prevbuild}
+    global prevbuild
+    global cb_data
+    prevtime = 0
+    prevbuild = 0
+    cb_data = ["# The UNIX timestamp and build number\n", "# of the currently used FE version.\n",
+               "timestamp: " + str(prevtime)+"\n", "buildnr: " + str(prevbuild)+"\n"]
     try:
-        with open("currentbuild.json", "r+") as currentbuild:
-            cb_data = json.load(currentbuild)
-            prevtime = cb_data["timestamp"]
+        with open(versionfile, "r+") as currentbuild:
+            cb_data = currentbuild.readlines()
+            prevtime = int(re.search("\d+", cb_data[2]).group(0))
+            prevbuild = int(re.search("\d+", cb_data[3]).group(0))
             response = urllib.urlopen('http://198.23.242.205:8080/job/ForgeEssentials/lastSuccessfulBuild/api/json')
             data = json.load(response)
             if not data["building"] and data["result"] == "SUCCESS":
                 if data["timestamp"] > prevtime:
-                    print "There is a newer build."
-                    cb_data["timestamp"] = data["timestamp"]
-                    cb_data["buildnr"] = data["number"]
+                    print "Latest build is " + str(data["number"]-prevbuild) + " builds ahead of your current one"
 
                     artifactindex = 0
                     for a in data["artifacts"]:
@@ -41,8 +43,12 @@ def parsing():
                             artifactindex += 1
                     print "Downloading..."
                     urllib.urlretrieve(
-                        'http://198.23.242.205:8080/job/ForgeEssentials/lastSuccessfulBuild/artifact/build/libs/' +
+                        'http://198.23.242.205:8080/job/ForgeEssentials/'+str(data["number"])+'/artifact/build/libs/' +
                         data["artifacts"][artifactindex]["fileName"], data["artifacts"][artifactindex]["fileName"])
+
+                    prevtime = data["timestamp"]
+                    prevbuild = data["number"]
+
                     print "Removing the old..."
                     for f in os.listdir("mods"):
                         if re.search("forgeessentials-.+-servercore.jar", f):
@@ -54,17 +60,18 @@ def parsing():
                         z.extractall()
 
                     currentbuild.seek(0, 0)
-                    json.dump(cb_data, currentbuild)
-                    print "Finished updating to latest build"
+                    cb_data[2] = "timestamp: " + str(prevtime)+"\n"
+                    cb_data[3] = "buildnr: " + str(prevbuild)+"\n"
+                    currentbuild.writelines(cb_data)
+                    print "Finished updating to build " + str(prevbuild) + "."
                 else:
-                    print "Already got latest build."
+                    print "You already have the latest build."
 
 
     except IOError, e:
-        if e.filename == "currentbuild.json":
-            with open("currentbuild.json", "w") as currentbuild:
-                json.dump(cb_data, currentbuild)
+        if e.filename == versionfile:
+            with open(versionfile, "w") as currentbuild:
+                currentbuild.writelines(cb_data)
             parsing()
-
 
 parsing()
