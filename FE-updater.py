@@ -11,10 +11,20 @@ versionfile = "FEVersion.txt"
 
 import json
 import shutil
-import zipfile
 import urllib
 import re
 import os
+import sys
+
+def reporthook(count, blockSize, totalSize):
+    prevpercent = 0
+    percent = int(count * blockSize * 100 / totalSize)
+    if percent > prevpercent:
+        sys.stdout.write("\r%d%%" % percent + ' complete')
+        sys.stdout.flush()
+        prevpercent = percent
+    if percent == 100:
+        sys.stdout.write("\n")
 
 def parsing():
     global prevtime
@@ -37,27 +47,24 @@ def parsing():
 
                     artifactindex = 0
                     for a in data["artifacts"]:
-                        if a["fileName"].endswith("-server.zip"):
+                        if a["fileName"].endswith("-server.jar"):
                             break
                         else:
                             artifactindex += 1
-                    print "Downloading..."
-                    urllib.urlretrieve(
-                        'http://198.23.242.205:8080/job/ForgeEssentials/'+str(data["number"])+'/artifact/build/libs/' +
-                        data["artifacts"][artifactindex]["fileName"], data["artifacts"][artifactindex]["fileName"])
-
-                    prevtime = data["timestamp"]
-                    prevbuild = data["number"]
 
                     print "Removing the old..."
                     for f in os.listdir("mods"):
-                        if re.search("forgeessentials-.+-servercore.jar", f):
+                        if re.search("forgeessentials-.+-server.jar", f):
                             os.remove(os.path.join("mods", f))
                     shutil.rmtree(os.path.join("ForgeEssentials", "lib"))
-                    shutil.rmtree(os.path.join("ForgeEssentials", "modules"))
-                    print "Extractiong the new..."
-                    with zipfile.ZipFile(data["artifacts"][artifactindex]["fileName"], "r") as z:
-                        z.extractall()
+
+                    print "Downloading the new..."
+                    urllib.urlretrieve(
+                        'http://198.23.242.205:8080/job/ForgeEssentials/'+str(data["number"])+'/artifact/build/libs/' +
+                        data["artifacts"][artifactindex]["fileName"], os.path.join("mods", data["artifacts"][artifactindex]["fileName"]), reporthook=reporthook)
+
+                    prevtime = data["timestamp"]
+                    prevbuild = data["number"]
 
                     currentbuild.seek(0, 0)
                     cb_data[2] = "timestamp: " + str(prevtime)+"\n"
