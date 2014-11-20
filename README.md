@@ -1,6 +1,6 @@
 # FE-updater
 
-**NOTE: you have to manually update to build 223 or later because of changes in FE.**
+**NOTE: the script can not update through build 223 because the build changes, that initial transition has to be done manually.**
 
 Place FE-updater.py in the same folder as the minecraft jar and then run it whenever you want to update to the latest FE-build.
 
