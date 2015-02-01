@@ -39,7 +39,7 @@ def parsing():
             cb_data = currentbuild.readlines()
             prevtime = int(re.search("\d+", cb_data[2]).group(0))
             prevbuild = int(re.search("\d+", cb_data[3]).group(0))
-            response = urllib.urlopen('http://198.23.242.205:8080/job/ForgeEssentials/lastSuccessfulBuild/api/json')
+            response = urllib.urlopen('http://bzeutzheim.de:8080/job/ForgeEssentials/lastSuccessfulBuild/api/json')
             data = json.load(response)
             if not data["building"] and data["result"] == "SUCCESS":
                 if data["timestamp"] > prevtime:
@@ -60,7 +60,7 @@ def parsing():
 
                     print "Downloading the new..."
                     urllib.urlretrieve(
-                        'http://198.23.242.205:8080/job/ForgeEssentials/'+str(data["number"])+'/artifact/build/libs/' +
+                        'http://bzeutzheim.de:8080/job/ForgeEssentials/'+str(data["number"])+'/artifact/build/libs/' +
                         data["artifacts"][artifactindex]["fileName"], os.path.join("mods", data["artifacts"][artifactindex]["fileName"]), reporthook=reporthook)
 
                     prevtime = data["timestamp"]
