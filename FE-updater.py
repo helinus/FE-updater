@@ -39,7 +39,7 @@ def parsing():
             cb_data = currentbuild.readlines()
             prevtime = int(re.search("\d+", cb_data[2]).group(0))
             prevbuild = int(re.search("\d+", cb_data[3]).group(0))
-            response = urllib.urlopen('http://bzeutzheim.de:8080/job/ForgeEssentials/lastSuccessfulBuild/api/json')
+            response = urllib.urlopen('http://ci.forgeessentials.com/job/FE/lastSuccessfulBuild/api/json')
             data = json.load(response)
             if not data["building"] and data["result"] == "SUCCESS":
                 if data["timestamp"] > prevtime:
